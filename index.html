@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>rdohms develops Open Source</title>
+    <link rel="stylesheet" type="text/css" href="assets/reset.css">
+    <link rel="stylesheet" type="text/css" href="assets/grid.css">
+    <link rel="stylesheet" type="text/css" href="assets/style.css">
+    <script type="text/javascript" src="assets/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="assets/strftime.js"></script>
+    <script type="text/javascript">
+    (function ($, undefined) {
+
+      // Put custom repo URL's in this object, keyed by repo name.
+      var repoUrls = {
+        "bootstrap": "http://twitter.github.com/bootstrap/",
+        "finagle": "http://twitter.github.com/finagle/",
+        "hogan.js": "http://twitter.github.com/hogan.js/"
+      };
+
+      function repoUrl(repo) {
+        return repoUrls[repo.name] || repo.html_url;
+      }
+
+      // Put custom repo descriptions in this object, keyed by repo name.
+      var repoDescriptions = {
+        "DMS-Filter": "Input filter library that allows annotation based filtering on entities",
+		"DMSFilterBundle": "Symfony 2 Bundle that enables the use of the DMS Filter Library",
+        "naggati2": "A protocol builder for Netty using Scala 2.8"
+      };
+
+      function repoDescription(repo) {
+        return repoDescriptions[repo.name] || repo.description;
+      }
+
+      function addRecentlyUpdatedRepo(repo) {
+        var $item = $("<li>");
+
+        var $name = $("<a>").attr("href", repo.html_url).text(repo.name);
+        $item.append($("<span>").addClass("name").append($name));
+
+        var $time = $("<a>").attr("href", repo.html_url + "/commits").text(strftime("%h %e, %Y", repo.pushed_at));
+        $item.append($("<span>").addClass("time").append($time));
+
+        $item.append('<span class="bullet">&sdot;</span>');
+
+        var $watchers = $("<a>").attr("href", repo.html_url + "/watchers").text(repo.watchers + " watchers");
+        $item.append($("<span>").addClass("watchers").append($watchers));
+
+        $item.append('<span class="bullet">&sdot;</span>');
+
+        var $forks = $("<a>").attr("href", repo.html_url + "/network").text(repo.forks + " forks");
+        $item.append($("<span>").addClass("forks").append($forks));
+
+        $item.appendTo("#recently-updated-repos");
+      }
+
+      function addRepo(repo) {
+        var $item = $("<li>").addClass("repo grid-1 " + (repo.language || '').toLowerCase());
+        var $link = $("<a>").attr("href", repoUrl(repo)).appendTo($item);
+        $link.append($("<h2>").text(repo.name));
+        $link.append($("<h3>").text(repo.language));
+        $link.append($("<p>").text(repoDescription(repo)));
+        $item.appendTo("#repos");
+      }
+
+      $.getJSON("https://api.github.com/users/rdohms/repos?per_page=100&callback=?", function (result) {
+        var repos = result.data;
+
+        $(function () {
+	      var totalRepos = repos.length;
+		  
+		  //Filter not forks
+		  repos = repos.filter(function(repo) {
+		    return (! repo.fork);
+		  })
+		  
+		  myForks = totalRepos - repos.length;
+		  $("#num-own-repos").text(repos.length);
+		  $("#num-repos").text(myForks);
+		  
+          // Convert pushed_at to Date.
+          $.each(repos, function (i, repo) {
+            repo.pushed_at = new Date(repo.pushed_at);
+
+            var weekHalfLife  = 1.146 * Math.pow(10, -9);
+
+            var pushDelta    = (new Date) - Date.parse(repo.pushed_at);
+            var createdDelta = (new Date) - Date.parse(repo.created_at);
+
+            var weightForPush = 1;
+            var weightForWatchers = 1.314 * Math.pow(10, 7);
+
+            repo.hotness = weightForPush * Math.pow(Math.E, -1 * weekHalfLife * pushDelta);
+            repo.hotness += weightForWatchers * repo.watchers / createdDelta;
+          });
+
+          // Sort by highest # of watchers.
+          repos.sort(function (a, b) {
+            if (a.hotness < b.hotness) return 1;
+            if (b.hotness < a.hotness) return -1;
+            return 0;
+          });
+
+          $.each(repos, function (i, repo) {
+			if (repo.fork) { return 0; }  
+            addRepo(repo);
+          });
+
+          // Sort by most-recently pushed to.
+          repos.sort(function (a, b) {
+            if (a.pushed_at < b.pushed_at) return 1;
+            if (b.pushed_at < a.pushed_at) return -1;
+            return 0;
+          });
+
+          $.each(repos.slice(0, 3), function (i, repo) {
+            addRecentlyUpdatedRepo(repo);
+          });
+        });
+      });
+
+      $.getJSON("https://api.github.com/users/rdohms/members?callback=?", function (result) {
+        var members = result.data;
+
+        $(function () {
+          $("#num-members").text(members.length);
+        });
+      });
+
+
+
+      var match = (/\blarry(=(\d+))?\b/i).exec(window.location.search);
+
+      if (match) {
+        var n = parseInt(match[2]) || 20;
+
+        $(function () {
+          for (var i = 0; i < n; ++i) {
+            setTimeout(makeRandomLarry, Math.random() * n * 500);
+          }
+        });
+      }
+
+    })(jQuery);
+    </script>
+  </head>
+  <body>
+    <div id="wrapper" class="grid clearfix">
+      <div id="main" class="grid-1">
+        <div id="logo"><h1>rdohms</h1></div>
+        <h1>PHP Evangelist and OSS Contributor</h1>
+        <p>Visit <a href="http://doh.ms/">doh.ms</a></p>
+        <p>Tweet at <a href="http://www.twitter.com/rdohms">@rdohms</a></p>
+      </div>
+
+      <div class="grid grid-3">
+        <div id="statistics" class="grid-1 alpha header">
+          <h1>Statistics</h1>
+          <p>
+            <a href="https://github.com/rdohms/repositories"><span id="num-own-repos">&nbsp;</span> public repos</a><br/>
+			<a href="https://github.com/rdohms/repositories"><span id="num-repos">&nbsp;</span> contributed to repos</a>
+          </p>
+        </div>
+
+        <div id="recently-updated" class="grid-2 omega header">
+          <h1>Recently updated <a href="https://github.com/rdohms/repositories">View All on GitHub</a></h1>
+          <ol id="recently-updated-repos"></ol>
+        </div>
+      </div>
+
+      <ol id="repos"></ol>
+    </div>
+	<footer style="width:100%; text-align:center;">Cloned from <a href="https://github.com/twitter/twitter.github.com">https://github.com/twitter/twitter.github.com</a></footer>
+  </body>
+</html>
