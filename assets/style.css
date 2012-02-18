@@ -89,11 +89,15 @@ div.header h1 {
   margin-bottom: 10px;
 }
 
-#num-own-repos, #num-repos, #num-members {
+#num-own-repos, #num-repos, #num-followers {
   font-size: 14px;
   font-weight: bold;
-  color: #0084b4;
+  color: #7ac9de;
   line-height: 15px;
+}
+
+#num-own-repos {
+  color: #0084b4;
 }
 
 #statistics a:link, #statistics a:visited {

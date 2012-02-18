@@ -120,11 +120,11 @@
         });
       });
 
-      $.getJSON("https://api.github.com/users/rdohms/members?callback=?", function (result) {
+      $.getJSON("https://api.github.com/users/rdohms/followers?per_page=1000&callback=?", function (result) {
         var members = result.data;
 
         $(function () {
-          $("#num-members").text(members.length);
+          $("#num-followers").text(members.length);
         });
       });
 
@@ -159,7 +159,8 @@
           <h1>Statistics</h1>
           <p>
             <a href="https://github.com/rdohms/repositories"><span id="num-own-repos">&nbsp;</span> public repos</a><br/>
-			<a href="https://github.com/rdohms/repositories"><span id="num-repos">&nbsp;</span> contributed to repos</a>
+			<a href="https://github.com/rdohms/repositories"><span id="num-repos">&nbsp;</span> contributed to repos</a><br/>
+			<a href="https://github.com/rdohms/followers"><span id="num-followers">&nbsp;</span> followers</a>
           </p>
         </div>
 
